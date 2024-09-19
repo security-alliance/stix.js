@@ -1,14 +1,14 @@
 {
     "name": "@security-alliance/stix",
-    "version": "0.0.1",
+    "version": "0.0.3",
     "description": "JavaScript library to interact with STIX",
     "main": "index.js",
     "publishConfig": {
         "access": "public"
     },
     "scripts": {
-        "build": "tsc",
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "rm -rf dist; tsc",
+        "prepublishOnly": "pnpm run build",
         "prettier:check": "npx prettier -c \"**/*.{js,ts,md,json,yml,yaml}\"",
         "prettier:fix": "npx prettier -w \"**/*.{js,ts,md,json,yml,yaml}\""
     },

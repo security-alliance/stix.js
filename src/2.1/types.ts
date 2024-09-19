@@ -1,9 +1,80 @@
+export type UUID = string;
+
+export type NeverProperties<T> = {
+    [P in keyof T]?: never;
+};
+
+export type LiteralUnion<Literal, Base> = Literal | (Base & Record<never, never>);
+
+export type OpenVocabulary<Literal> = LiteralUnion<Literal, string>;
+
+export type BaseStixObject<
+    RequiredKeys extends keyof CommonProperties<Type>,
+    OptionalKeys extends keyof CommonProperties<Type>,
+    NotApplicableKeys extends keyof CommonProperties<Type>,
+    Type extends OpenVocabulary<StixObjectType>,
+> = Pick<CommonProperties<Type>, RequiredKeys> &
+    Partial<Pick<CommonProperties<Type>, OptionalKeys>> &
+    NeverProperties<Pick<CommonProperties<Type>, NotApplicableKeys>> &
+    CustomProperties;
+
 //#region 1 - Overview
 export type StixObject = StixCoreObject | StixMetaObject;
 
+export type StixObjectType = StixCoreObjectType | StixMetaObjectType | StixBundleType;
+
 export type StixCoreObject = StixDomainObject | StixCyberObservableObject | StixRelationshipObject;
 
+export type StixDomainObjectType =
+    | "attack-pattern"
+    | "campaign"
+    | "course-of-action"
+    | "grouping"
+    | "identity"
+    | "incident"
+    | "indicator"
+    | "infrastructure"
+    | "intrusion-set"
+    | "location"
+    | "malware"
+    | "note"
+    | "observed-data"
+    | "opinion"
+    | "report"
+    | "threat-actor"
+    | "tool"
+    | "vulnerability";
+
+export type StixCyberObservableObjectType =
+    | "artifact"
+    | "autonomous-system"
+    | "directory"
+    | "domain-name"
+    | "email-address"
+    | "email-message"
+    | "file"
+    | "ipv4-address"
+    | "ipv6-address"
+    | "mac-address"
+    | "mutex"
+    | "network-traffic"
+    | "process"
+    | "software"
+    | "url"
+    | "user-account"
+    | "windows-registry-key"
+    | "x509-certificate";
+
+export type StixRelationshipObjectType = "relationship" | "sighting";
+
+export type StixCoreObjectType = StixDomainObjectType | StixCyberObservableObjectType | StixRelationshipObjectType;
+
 export type StixMetaObject = ExtensionDefinition | LanguageContent | MarkingDefinition;
+
+export type StixMetaObjectType = "language-content" | "marking-definition" | "extension-definition";
+
+export type StixBundleType = "bundle";
+
 //#endregion
 
 //#region 2 - Common Data Types
@@ -15,7 +86,7 @@ export type ExternalReference = {
     url?: string;
     hashes?: Hashes;
     external_id?: string;
-};
+} & CustomProperties;
 
 export type Float = number;
 
@@ -23,25 +94,24 @@ export type Hashes = Record<HashAlgorithmOv, string>;
 
 export type Hex = string;
 
-export type Identifier = `${string}--${string}`;
+export type Identifier<T extends OpenVocabulary<StixObjectType> = string> = `${T}--${UUID}`;
 
 export type Integer = number;
 
 export type KillChainPhase = {
     kill_chain_name: string;
     phase_name: string;
-    [key: `x_${string}`]: unknown;
-};
+} & CustomProperties;
 
 export type Timestamp = string;
 //#endregion
 
 //#region 3 - STIX General Concepts
-export type CommonProperties = {
-    type: string;
+export type CommonProperties<T extends OpenVocabulary<StixObjectType> = string> = {
+    type: T;
     spec_version: string;
-    id: Identifier;
-    created_by_ref: Identifier;
+    id: Identifier<T>;
+    created_by_ref: Identifier<"identity">;
     created: Timestamp;
     modified: Timestamp;
     revoked: boolean;
@@ -49,28 +119,11 @@ export type CommonProperties = {
     confidence: Integer;
     lang: string;
     external_references: ExternalReference[];
-    object_marking_refs: Identifier[];
-    granular_markings: any[]; //TODO: type this properly
+    object_marking_refs: Identifier<"marking-definition">[];
+    granular_markings: GranularMarking[];
     defanged: boolean;
-    extensions: Record<string, any>; //TODO: type this properly
+    extensions: Record<string, ExtensionDefinition>;
 };
-
-type NeverProperties<T> = {
-    [P in keyof T]?: never;
-};
-
-export type BaseStixObject<
-    RequiredKeys extends keyof CommonProperties,
-    OptionalKeys extends keyof CommonProperties,
-    NotApplicableKeys extends keyof CommonProperties,
-    Type extends string,
-> = Pick<CommonProperties, RequiredKeys> &
-    Partial<Pick<CommonProperties, OptionalKeys>> &
-    NeverProperties<Pick<CommonProperties, NotApplicableKeys>> & {
-        type: Type;
-        id: `${Type}--${string}`;
-        [key: `x_${string}`]: unknown;
-    };
 
 export type CommonRelationshipType = "derived-from" | "duplicate-of" | "related-to";
 //#endregion
@@ -282,33 +335,126 @@ export type X509Certificate = any;
 //#region 7 - STIX Meta Objects
 export type LanguageContent = any;
 
-export type MarkingDefinition = any;
+export type MarkingDefinition = ExtensionMarkingDefinition | StatementMarkingDefinition | TLPMarkingDefinition;
+
+export type ExtensionMarkingDefinition = BaseStixObject<
+    "type" | "spec_version" | "id" | "created" | "extensions",
+    "created_by_ref" | "external_references" | "object_marking_refs" | "granular_markings",
+    "modified" | "revoked" | "labels" | "confidence" | "lang" | "defanged",
+    "marking-definition"
+> & {
+    name?: string;
+    definition_type?: never;
+};
+
+export type StatementMarkingDefinition = BaseStixObject<
+    "type" | "spec_version" | "id" | "created",
+    "created_by_ref" | "external_references" | "object_marking_refs" | "granular_markings",
+    "modified" | "revoked" | "labels" | "confidence" | "lang" | "defanged" | "extensions",
+    "marking-definition"
+> & {
+    name?: string;
+    definition_type: "statement";
+    definition: {
+        statement: string;
+    };
+};
+
+export type TLPMarkingDefinition = BaseStixObject<
+    "type" | "spec_version" | "id" | "created",
+    "created_by_ref" | "external_references" | "object_marking_refs" | "granular_markings",
+    "modified" | "revoked" | "labels" | "confidence" | "lang" | "defanged" | "extensions",
+    "marking-definition"
+> & {
+    name?: string;
+    definition_type: "tlp";
+    definition: {
+        tlp: OpenVocabulary<"white" | "green" | "amber" | "red">;
+    };
+};
 
 export type GranularMarking = any;
 
-export type ExtensionDefinition = any;
+export type ExtensionDefinition = BaseStixObject<
+    "type" | "spec_version" | "id" | "created" | "modified" | "created_by_ref",
+    "revoked" | "labels" | "external_references" | "object_marking_refs" | "granular_markings",
+    "confidence" | "lang" | "defanged" | "extensions",
+    "extension-definition"
+> & {
+    name: string;
+    description?: string;
+    schema: string;
+    version: string;
+    extension_types: "new-sdo" | "new-sco" | "new-sro" | "property-extension" | "toplevel-property-extension";
+    extension_properties?: string[];
+};
 //#endregion
 
 //#region 8 - STIX Bundle Object
 export type Bundle = {
     type: "bundle";
-    id: `bundle--${string}`;
+    id: Identifier<"bundle">;
     objects: StixObject[];
-};
+} & CustomProperties;
 //#endregion
 
 //#region 10 - STIX Vocabularies
-export type OpenVocabulary<Literal> = Literal | (string & Record<never, never>);
-
 export type HashAlgorithmOv = OpenVocabulary<
     "MD5" | "SHA-1" | "SHA-256" | "SHA-512" | "SHA3-256" | "SHA3-512" | "SSDEEP" | "TLSH"
 >;
 
 export type IdentityClassOv = OpenVocabulary<"individual" | "group" | "system" | "organization" | "class" | "unknown">;
 
-export type IndustrySectorOv = OpenVocabulary<"">;
+export type IndustrySectorOv = OpenVocabulary<
+    | "agriculture"
+    | "aerospace"
+    | "automotive"
+    | "chemical"
+    | "commercial"
+    | "communications"
+    | "construction"
+    | "defense"
+    | "education"
+    | "energy"
+    | "entertainment"
+    | "financial-services"
+    | "government"
+    | "emergency-services"
+    | "government-local"
+    | "government-national"
+    | "government-public-services"
+    | " government-regional"
+    | "healthcare"
+    | "hospitality-leisure"
+    | "infrastructure"
+    | "dams"
+    | "nuclear"
+    | "water"
+    | "insurance"
+    | "manufacturing"
+    | "mining"
+    | "non-profit"
+    | "pharmaceuticals"
+    | "retail"
+    | "technology"
+    | "telecommunications"
+    | "transportation"
+    | "utilities"
+>;
 
-export type IndicatorTypeOv = OpenVocabulary<"">;
+export type IndicatorTypeOv = OpenVocabulary<
+    "anomalous-activity" | "anonymization" | "benign" | "compromised" | "malicious-activity" | "attribution" | "unknown"
+>;
 
-export type PatternTypeOv = OpenVocabulary<"">;
+export type PatternTypeOv = OpenVocabulary<"stix" | "pcre" | "sigma" | "snort" | "suricata" | "yara">;
+//#endregion
+
+//#region 11 - Customizing STIX
+export type CustomProperties = {
+    // recommended
+    [key: `x_${string}`]: unknown;
+
+    // possible
+    [key: string]: unknown;
+};
 //#endregion
