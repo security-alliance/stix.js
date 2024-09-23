@@ -1,16 +1,20 @@
 import { canonicalize } from "json-canonicalize";
 import { v4, v5 } from "uuid";
-import { Identifier, StixObjectType } from "./types";
+import { Identifier, OpenVocabulary, StixObjectType } from "./types";
 
 export const OASIS_NAMESPACE = "00abedb4-aa42-466c-9c01-fed23315a9b7";
 
 export type Any<T> = T & Record<any, any>;
 
-export const generateRandomId = <T extends StixObjectType>(type: T): Identifier<T> => {
+export const isIdentifierType = <T extends string>(id: Identifier<any>, type: T): id is Identifier<T> => {
+    return id.startsWith(`${type}--`);
+};
+
+export const generateRandomId = <T extends OpenVocabulary<StixObjectType>>(type: T): Identifier<T> => {
     return `${type}--${v4()}`;
 };
 
-export const generateDeterministicId = <T extends StixObjectType>(
+export const generateDeterministicId = <T extends OpenVocabulary<StixObjectType>>(
     type: T,
     props: any,
     namespace: string = OASIS_NAMESPACE,

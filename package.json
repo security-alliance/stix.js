@@ -1,6 +1,6 @@
 {
     "name": "@security-alliance/stix",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "JavaScript library to interact with STIX",
     "main": "index.js",
     "publishConfig": {

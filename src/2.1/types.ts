@@ -1,3 +1,4 @@
+//#region helpers
 export type UUID = string;
 
 export type NeverProperties<T> = {
@@ -7,74 +8,57 @@ export type NeverProperties<T> = {
 export type LiteralUnion<Literal, Base> = Literal | (Base & Record<never, never>);
 
 export type OpenVocabulary<Literal> = LiteralUnion<Literal, string>;
+//#endregion
 
-export type BaseStixObject<
-    RequiredKeys extends keyof CommonProperties<Type>,
-    OptionalKeys extends keyof CommonProperties<Type>,
-    NotApplicableKeys extends keyof CommonProperties<Type>,
-    Type extends OpenVocabulary<StixObjectType>,
-> = Pick<CommonProperties<Type>, RequiredKeys> &
-    Partial<Pick<CommonProperties<Type>, OptionalKeys>> &
-    NeverProperties<Pick<CommonProperties<Type>, NotApplicableKeys>> &
-    CustomProperties;
+//#region typemaps
+/**
+ * Users can register custom SDOs, SCOs, and SROs through interface merging
+ *
+ * There is no support for declaring custom meta objects at this time
+ * */
+type BuiltinStixDomainObjectTypeMap = { [K in StixDomainObject as K["type"]]: K };
+
+export interface StixDomainObjectTypeMap extends BuiltinStixDomainObjectTypeMap {}
+
+type BuiltinStixCyberObservableObjectTypeMap = { [K in StixCyberObservableObject as K["type"]]: K };
+
+export interface StixCyberObservableObjectTypeMap extends BuiltinStixCyberObservableObjectTypeMap {}
+
+type BuiltinStixRelationshipObjectTypeMap = { [K in StixRelationshipObject as K["type"]]: K };
+
+export interface StixRelationshipObjectTypeMap extends BuiltinStixRelationshipObjectTypeMap {}
+
+export type StixCoreObjectTypeMap = StixDomainObjectTypeMap &
+    StixCyberObservableObjectTypeMap &
+    StixRelationshipObjectTypeMap;
+
+export type StixMetaObjectTypeMap = { [K in StixMetaObject as K["type"]]: K };
+
+export type StixBundleTypeMap = { bundle: StixBundle };
+
+export type StixObjectTypeMap = StixCoreObjectTypeMap & StixMetaObjectTypeMap & StixBundleTypeMap;
+//#endregion
 
 //#region 1 - Overview
-export type StixObject = StixCoreObject | StixMetaObject;
-
-export type StixObjectType = StixCoreObjectType | StixMetaObjectType | StixBundleType;
+export type StixObject = StixCoreObject | StixMetaObject | StixBundle;
 
 export type StixCoreObject = StixDomainObject | StixCyberObservableObject | StixRelationshipObject;
 
-export type StixDomainObjectType =
-    | "attack-pattern"
-    | "campaign"
-    | "course-of-action"
-    | "grouping"
-    | "identity"
-    | "incident"
-    | "indicator"
-    | "infrastructure"
-    | "intrusion-set"
-    | "location"
-    | "malware"
-    | "note"
-    | "observed-data"
-    | "opinion"
-    | "report"
-    | "threat-actor"
-    | "tool"
-    | "vulnerability";
+export type StixMetaObject = ExtensionDefinition | LanguageContent | MarkingDefinition;
 
-export type StixCyberObservableObjectType =
-    | "artifact"
-    | "autonomous-system"
-    | "directory"
-    | "domain-name"
-    | "email-address"
-    | "email-message"
-    | "file"
-    | "ipv4-address"
-    | "ipv6-address"
-    | "mac-address"
-    | "mutex"
-    | "network-traffic"
-    | "process"
-    | "software"
-    | "url"
-    | "user-account"
-    | "windows-registry-key"
-    | "x509-certificate";
-
-export type StixRelationshipObjectType = "relationship" | "sighting";
+export type StixObjectType = StixCoreObjectType | StixMetaObjectType | StixBundleType;
 
 export type StixCoreObjectType = StixDomainObjectType | StixCyberObservableObjectType | StixRelationshipObjectType;
 
-export type StixMetaObject = ExtensionDefinition | LanguageContent | MarkingDefinition;
+export type StixMetaObjectType = StixMetaObject["type"];
 
-export type StixMetaObjectType = "language-content" | "marking-definition" | "extension-definition";
+export type StixBundleType = StixBundle["type"];
 
-export type StixBundleType = "bundle";
+export type StixDomainObjectType = keyof StixDomainObjectTypeMap;
 
+export type StixCyberObservableObjectType = keyof StixCyberObservableObjectTypeMap;
+
+export type StixRelationshipObjectType = keyof StixRelationshipObjectTypeMap;
 //#endregion
 
 //#region 2 - Common Data Types
@@ -94,7 +78,7 @@ export type Hashes = Record<HashAlgorithmOv, string>;
 
 export type Hex = string;
 
-export type Identifier<T extends OpenVocabulary<StixObjectType> = string> = `${T}--${UUID}`;
+export type Identifier<T extends StixObjectType = StixObjectType> = `${T}--${UUID}`;
 
 export type Integer = number;
 
@@ -107,7 +91,7 @@ export type Timestamp = string;
 //#endregion
 
 //#region 3 - STIX General Concepts
-export type CommonProperties<T extends OpenVocabulary<StixObjectType> = string> = {
+export type CommonProperties<T extends StixObjectType = string> = {
     type: T;
     spec_version: string;
     id: Identifier<T>;
@@ -126,9 +110,39 @@ export type CommonProperties<T extends OpenVocabulary<StixObjectType> = string> 
 };
 
 export type CommonRelationshipType = "derived-from" | "duplicate-of" | "related-to";
+
+export type BaseStixObject<
+    Type extends StixObjectType,
+    RequiredKeys extends keyof CommonProperties<Type>,
+    OptionalKeys extends keyof CommonProperties<Type>,
+    NotApplicableKeys extends keyof CommonProperties<Type>,
+> = Pick<CommonProperties<Type>, RequiredKeys> &
+    Partial<Pick<CommonProperties<Type>, OptionalKeys>> &
+    NeverProperties<Pick<CommonProperties<Type>, NotApplicableKeys>> &
+    CustomProperties;
 //#endregion
 
 //#region 4 - STIX Domain Objects
+export type BaseSDORequiredProperties = "type" | "spec_version" | "id" | "created" | "modified";
+export type BaseSDOOptionalProperties =
+    | "created_by_ref"
+    | "revoked"
+    | "labels"
+    | "confidence"
+    | "lang"
+    | "external_references"
+    | "object_marking_refs"
+    | "granular_markings"
+    | "extensions";
+export type BaseSDONotApplicableProperties = "defanged";
+
+export type BaseStixDomainObject<
+    T extends StixObjectType,
+    R extends keyof CommonProperties<T> = BaseSDORequiredProperties,
+    O extends keyof CommonProperties<T> = BaseSDOOptionalProperties,
+    NA extends keyof CommonProperties<T> = BaseSDONotApplicableProperties,
+> = BaseStixObject<T, R, O, NA>;
+
 export type StixDomainObject =
     | AttackPattern
     | Campaign
@@ -148,49 +162,25 @@ export type StixDomainObject =
     | Report
     | ThreatActor
     | Tool
-    | Vulnerability;
-export type AttackPattern = BaseStixObject<
-    "type" | "spec_version" | "id" | "created" | "modified",
-    | "created_by_ref"
-    | "revoked"
-    | "labels"
-    | "confidence"
-    | "lang"
-    | "external_references"
-    | "object_marking_refs"
-    | "granular_markings"
-    | "extensions",
-    "defanged",
-    "attack-pattern"
-> & {
+    | Vulnerability
+    | BaseStixDomainObject<string & Record<never, never>>;
+
+export interface AttackPattern extends BaseStixDomainObject<"attack-pattern"> {
     name: string;
     description?: string;
     aliases?: string[];
     kill_chain_phases?: KillChainPhase[];
-};
+}
 
 export type AttackPatternRelationshipType = "delivers" | "targets" | "uses";
 
-export type Campaign = any;
+export type Campaign = BaseStixDomainObject<"campaign">;
 
-export type CourseOfAction = any;
+export type CourseOfAction = BaseStixDomainObject<"course-of-action">;
 
-export type Grouping = any;
+export type Grouping = BaseStixDomainObject<"grouping">;
 
-export type Identity = BaseStixObject<
-    "type" | "spec_version" | "id" | "created" | "modified",
-    | "created_by_ref"
-    | "revoked"
-    | "labels"
-    | "confidence"
-    | "lang"
-    | "external_references"
-    | "object_marking_refs"
-    | "granular_markings"
-    | "extensions",
-    "defanged",
-    "identity"
-> & {
+export type Identity = BaseStixDomainObject<"identity"> & {
     name: string;
     description?: string;
     roles?: string[];
@@ -199,38 +189,12 @@ export type Identity = BaseStixObject<
     contact_information?: string;
 };
 
-export type Incident = BaseStixObject<
-    "type" | "spec_version" | "id" | "created" | "modified",
-    | "created_by_ref"
-    | "revoked"
-    | "labels"
-    | "confidence"
-    | "lang"
-    | "external_references"
-    | "object_marking_refs"
-    | "granular_markings"
-    | "extensions",
-    "defanged",
-    "incident"
-> & {
+export type Incident = BaseStixDomainObject<"incident"> & {
     name: string;
     description?: string;
 };
 
-export type Indicator = BaseStixObject<
-    "type" | "spec_version" | "id" | "created" | "modified",
-    | "created_by_ref"
-    | "revoked"
-    | "labels"
-    | "confidence"
-    | "lang"
-    | "external_references"
-    | "object_marking_refs"
-    | "granular_markings"
-    | "extensions",
-    "defanged",
-    "indicator"
-> & {
+export type Indicator = BaseStixDomainObject<"indicator"> & {
     name?: string;
     description?: string;
     indicator_types?: IndicatorTypeOv[];
@@ -242,40 +206,62 @@ export type Indicator = BaseStixObject<
     kill_chain_phases?: KillChainPhase[];
 };
 
-export type Infrastructure = any;
+export type Infrastructure = BaseStixDomainObject<"infrastructure">;
 
-export type IntrusionSet = any;
+export type IntrusionSet = BaseStixDomainObject<"intrusion-set">;
 
-export type Location = any;
+export type Location = BaseStixDomainObject<"location">;
 
-export type Malware = any;
+export type Malware = BaseStixDomainObject<"malware">;
 
-export type MalwareAnalysis = any;
+export type MalwareAnalysis = BaseStixDomainObject<"malware-analysis">;
 
-export type Note = any;
+export type Note = BaseStixDomainObject<"note">;
 
-export type ObservedData = any;
+export type ObservedData = BaseStixDomainObject<"observed-data">;
 
-export type Opinion = any;
+export type Opinion = BaseStixDomainObject<"opinion">;
 
-export type Report = any;
+export type Report = BaseStixDomainObject<"report">;
 
-export type ThreatActor = any;
+export type ThreatActor = BaseStixDomainObject<"threat-actor">;
 
-export type Tool = any;
+export type Tool = BaseStixDomainObject<"tool">;
 
-export type Vulnerability = any;
+export type Vulnerability = BaseStixDomainObject<"vulnerability">;
 //#endregion
 
 //#region 5 - STIX Relationship Objects
 export type StixRelationshipObject = Relationship | Sighting;
 
-export type Relationship = any;
+export type Relationship = BaseStixDomainObject<"relationship">; //TODO - type these
 
-export type Sighting = any;
+export type Sighting = BaseStixDomainObject<"sighting">; //TODO - type these
 //#endregion
 
 //#region 6 - STIX Cyber-observable Objects
+export type BaseSCORequiredProperties = "type" | "id";
+export type BaseSCOOptionalProperties =
+    | "spec_version"
+    | "object_marking_refs"
+    | "granular_markings"
+    | "defanged"
+    | "extensions";
+export type BaseSCONotApplicableProperties =
+    | "created_by_ref"
+    | "revoked"
+    | "labels"
+    | "confidence"
+    | "lang"
+    | "external_references";
+
+export type BaseStixCyberObservableObject<
+    T extends StixObjectType,
+    R extends keyof CommonProperties<T> = BaseSCORequiredProperties,
+    O extends keyof CommonProperties<T> = BaseSCOOptionalProperties,
+    NA extends keyof CommonProperties<T> = BaseSCONotApplicableProperties,
+> = BaseStixObject<T, R, O, NA>;
+
 export type StixCyberObservableObject =
     | Artifact
     | AutonomousSystem
@@ -294,64 +280,60 @@ export type StixCyberObservableObject =
     | URL
     | UserAccount
     | WindowsRegistryKey
-    | X509Certificate;
+    | X509Certificate
+    | BaseStixCyberObservableObject<string & Record<never, never>>;
 
-export type Artifact = any;
-export type AutonomousSystem = any;
-export type Directory = any;
-export type DomainName = BaseStixObject<
-    "type" | "id",
-    "spec_version" | "object_marking_refs" | "granular_markings" | "defanged" | "extensions",
-    "created_by_ref" | "revoked" | "labels" | "confidence" | "lang" | "external_references",
-    "domain-name"
-> & {
+export type Artifact = BaseStixCyberObservableObject<"artifact">;
+export type AutonomousSystem = BaseStixCyberObservableObject<"autonomous-system">;
+export type Directory = BaseStixCyberObservableObject<"directory">;
+export type DomainName = BaseStixCyberObservableObject<"domain-name"> & {
     value: string;
     resolves_to_refs?: Identifier[];
 };
-export type EmailAddress = any;
-export type EmailMessage = any;
-export type File = any;
-export type IPv4Address = any;
-export type IPv6Address = any;
-export type MACAddress = any;
-export type Mutex = any;
-export type NetworkTraffic = any;
-export type Process = any;
-export type Software = any;
-export type URL = BaseStixObject<
-    "type" | "id",
-    "spec_version" | "object_marking_refs" | "granular_markings" | "defanged" | "extensions",
-    "created_by_ref" | "revoked" | "labels" | "confidence" | "lang" | "external_references",
-    "url"
-> & {
+export type EmailAddress = BaseStixCyberObservableObject<"email-address">;
+export type EmailMessage = BaseStixCyberObservableObject<"email-message">;
+export type File = BaseStixCyberObservableObject<"file">;
+export type IPv4Address = BaseStixCyberObservableObject<"ipv4-address">;
+export type IPv6Address = BaseStixCyberObservableObject<"ipv6-address">;
+export type MACAddress = BaseStixCyberObservableObject<"mac-address">;
+export type Mutex = BaseStixCyberObservableObject<"mutex">;
+export type NetworkTraffic = BaseStixCyberObservableObject<"network-traffic">;
+export type Process = BaseStixCyberObservableObject<"process">;
+export type Software = BaseStixCyberObservableObject<"software">;
+export type URL = BaseStixCyberObservableObject<"url"> & {
     value: string;
 };
-export type UserAccount = any;
-export type WindowsRegistryKey = any;
-export type X509Certificate = any;
+export type UserAccount = BaseStixCyberObservableObject<"user-account">;
+export type WindowsRegistryKey = BaseStixCyberObservableObject<"windows-registry-key">;
+export type X509Certificate = BaseStixCyberObservableObject<"x509-certificate">;
 
 //#endregion
 
 //#region 7 - STIX Meta Objects
-export type LanguageContent = any;
+export type LanguageContent = BaseStixObject<
+    "language-content",
+    "type" | "spec_version" | "id" | "created" | "modified" | "created_by_ref",
+    "revoked" | "labels" | "external_references" | "object_marking_refs" | "granular_markings",
+    "confidence" | "lang" | "defanged" | "extensions"
+>;
 
 export type MarkingDefinition = ExtensionMarkingDefinition | StatementMarkingDefinition | TLPMarkingDefinition;
 
 export type ExtensionMarkingDefinition = BaseStixObject<
+    "marking-definition",
     "type" | "spec_version" | "id" | "created" | "extensions",
     "created_by_ref" | "external_references" | "object_marking_refs" | "granular_markings",
-    "modified" | "revoked" | "labels" | "confidence" | "lang" | "defanged",
-    "marking-definition"
+    "modified" | "revoked" | "labels" | "confidence" | "lang" | "defanged"
 > & {
     name?: string;
     definition_type?: never;
 };
 
 export type StatementMarkingDefinition = BaseStixObject<
+    "marking-definition",
     "type" | "spec_version" | "id" | "created",
     "created_by_ref" | "external_references" | "object_marking_refs" | "granular_markings",
-    "modified" | "revoked" | "labels" | "confidence" | "lang" | "defanged" | "extensions",
-    "marking-definition"
+    "modified" | "revoked" | "labels" | "confidence" | "lang" | "defanged" | "extensions"
 > & {
     name?: string;
     definition_type: "statement";
@@ -361,10 +343,10 @@ export type StatementMarkingDefinition = BaseStixObject<
 };
 
 export type TLPMarkingDefinition = BaseStixObject<
+    "marking-definition",
     "type" | "spec_version" | "id" | "created",
     "created_by_ref" | "external_references" | "object_marking_refs" | "granular_markings",
-    "modified" | "revoked" | "labels" | "confidence" | "lang" | "defanged" | "extensions",
-    "marking-definition"
+    "modified" | "revoked" | "labels" | "confidence" | "lang" | "defanged" | "extensions"
 > & {
     name?: string;
     definition_type: "tlp";
@@ -373,13 +355,18 @@ export type TLPMarkingDefinition = BaseStixObject<
     };
 };
 
-export type GranularMarking = any;
-
-export type ExtensionDefinition = BaseStixObject<
+export type GranularMarking = BaseStixObject<
+    "granular-marking",
     "type" | "spec_version" | "id" | "created" | "modified" | "created_by_ref",
     "revoked" | "labels" | "external_references" | "object_marking_refs" | "granular_markings",
-    "confidence" | "lang" | "defanged" | "extensions",
-    "extension-definition"
+    "confidence" | "lang" | "defanged" | "extensions"
+>;
+
+export type ExtensionDefinition = BaseStixObject<
+    "extension-definition",
+    "type" | "spec_version" | "id" | "created" | "modified" | "created_by_ref",
+    "revoked" | "labels" | "external_references" | "object_marking_refs" | "granular_markings",
+    "confidence" | "lang" | "defanged" | "extensions"
 > & {
     name: string;
     description?: string;
@@ -391,7 +378,7 @@ export type ExtensionDefinition = BaseStixObject<
 //#endregion
 
 //#region 8 - STIX Bundle Object
-export type Bundle = {
+export type StixBundle = {
     type: "bundle";
     id: Identifier<"bundle">;
     objects: StixObject[];
@@ -450,11 +437,7 @@ export type PatternTypeOv = OpenVocabulary<"stix" | "pcre" | "sigma" | "snort" |
 //#endregion
 
 //#region 11 - Customizing STIX
-export type CustomProperties = {
-    // recommended
+export interface CustomProperties {
     [key: `x_${string}`]: unknown;
-
-    // possible
-    [key: string]: unknown;
-};
+}
 //#endregion
