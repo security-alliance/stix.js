@@ -165,12 +165,12 @@ export type StixDomainObject =
     | Vulnerability
     | BaseStixDomainObject<string & Record<never, never>>;
 
-export interface AttackPattern extends BaseStixDomainObject<"attack-pattern"> {
+export type AttackPattern = BaseStixDomainObject<"attack-pattern"> & {
     name: string;
     description?: string;
     aliases?: string[];
     kill_chain_phases?: KillChainPhase[];
-}
+};
 
 export type AttackPatternRelationshipType = "delivers" | "targets" | "uses";
 
@@ -216,7 +216,12 @@ export type Malware = BaseStixDomainObject<"malware">;
 
 export type MalwareAnalysis = BaseStixDomainObject<"malware-analysis">;
 
-export type Note = BaseStixDomainObject<"note">;
+export type Note = BaseStixDomainObject<"note"> & {
+    abstract?: string;
+    content: string;
+    authors?: string[];
+    object_refs: Identifier[];
+};
 
 export type ObservedData = BaseStixDomainObject<"observed-data">;
 
