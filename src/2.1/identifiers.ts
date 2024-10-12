@@ -26,6 +26,18 @@ export const generateDomainObservableId = (props: Any<{ value: string }>): Ident
     return generateDeterministicId("domain-name", { value: props.value });
 };
 
+export const generateUrlObservableId = (props: Any<{ value: string }>): Identifier<"url"> => {
+    return generateDeterministicId("url", { value: props.value });
+};
+
+export const generateIPv4ObservableId = (props: Any<{ value: string }>): Identifier<"ipv4-addr"> => {
+    return generateDeterministicId("ipv4-addr", { value: props.value });
+};
+
+export const generateIPv6ObservableId = (props: Any<{ value: string }>): Identifier<"ipv6-addr"> => {
+    return generateDeterministicId("ipv6-addr", { value: props.value });
+};
+
 export const generateBundleId = (): Identifier<"bundle"> => {
     return generateRandomId("bundle");
 };

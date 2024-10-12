@@ -275,14 +275,14 @@ export type StixCyberObservableObject =
     | EmailAddress
     | EmailMessage
     | File
-    | IPv4Address
-    | IPv6Address
-    | MACAddress
+    | IPv4Addr
+    | IPv6Addr
+    | MACAddr
     | Mutex
     | NetworkTraffic
     | Process
     | Software
-    | URL
+    | Url
     | UserAccount
     | WindowsRegistryKey
     | X509Certificate
@@ -298,14 +298,14 @@ export type DomainName = BaseStixCyberObservableObject<"domain-name"> & {
 export type EmailAddress = BaseStixCyberObservableObject<"email-address">;
 export type EmailMessage = BaseStixCyberObservableObject<"email-message">;
 export type File = BaseStixCyberObservableObject<"file">;
-export type IPv4Address = BaseStixCyberObservableObject<"ipv4-address">;
-export type IPv6Address = BaseStixCyberObservableObject<"ipv6-address">;
-export type MACAddress = BaseStixCyberObservableObject<"mac-address">;
+export type IPv4Addr = BaseStixCyberObservableObject<"ipv4-addr">;
+export type IPv6Addr = BaseStixCyberObservableObject<"ipv6-addr">;
+export type MACAddr = BaseStixCyberObservableObject<"mac-addr">;
 export type Mutex = BaseStixCyberObservableObject<"mutex">;
 export type NetworkTraffic = BaseStixCyberObservableObject<"network-traffic">;
 export type Process = BaseStixCyberObservableObject<"process">;
 export type Software = BaseStixCyberObservableObject<"software">;
-export type URL = BaseStixCyberObservableObject<"url"> & {
+export type Url = BaseStixCyberObservableObject<"url"> & {
     value: string;
 };
 export type UserAccount = BaseStixCyberObservableObject<"user-account">;
@@ -383,10 +383,15 @@ export type ExtensionDefinition = BaseStixObject<
 //#endregion
 
 //#region 8 - STIX Bundle Object
+export type StixBundleObject<T extends StixObjectType = StixObjectType> = Partial<StixObject> & {
+    type: T;
+    id: Identifier<T>;
+};
+
 export type StixBundle = {
     type: "bundle";
     id: Identifier<"bundle">;
-    objects: StixObject[];
+    objects: StixBundleObject[];
 } & CustomProperties;
 //#endregion
 
