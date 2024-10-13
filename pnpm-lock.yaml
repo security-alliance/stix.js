@@ -14,6 +14,9 @@ importers:
                 specifier: ^10.0.0
                 version: 10.0.0
         devDependencies:
+            "@types/node":
+                specifier: ^22.7.5
+                version: 22.7.5
             "@types/uuid":
                 specifier: ^10.0.0
                 version: 10.0.0
@@ -246,6 +249,12 @@ packages:
         engines: { node: ">=18" }
         cpu: [x64]
         os: [win32]
+
+    "@types/node@22.7.5":
+        resolution:
+            {
+                integrity: sha512-jML7s2NAzMWc//QSJ1a3prpk78cOPchGvXJsC3C6R6PSMoooztvRVQEz89gmBTBY1SPMaqo5teB4uNHPdetShQ==,
+            }
 
     "@types/uuid@10.0.0":
         resolution:
@@ -745,6 +754,12 @@ packages:
         engines: { node: ">=14.17" }
         hasBin: true
 
+    undici-types@6.19.8:
+        resolution:
+            {
+                integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==,
+            }
+
     uuid@10.0.0:
         resolution:
             {
@@ -878,6 +893,10 @@ snapshots:
 
     "@esbuild/win32-x64@0.23.1":
         optional: true
+
+    "@types/node@22.7.5":
+        dependencies:
+            undici-types: 6.19.8
 
     "@types/uuid@10.0.0": {}
 
@@ -1161,6 +1180,8 @@ snapshots:
             fsevents: 2.3.3
 
     typescript@5.6.2: {}
+
+    undici-types@6.19.8: {}
 
     uuid@10.0.0: {}
 

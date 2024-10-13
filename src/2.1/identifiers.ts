@@ -1,6 +1,6 @@
 import { canonicalize } from "json-canonicalize";
 import { v4, v5 } from "uuid";
-import { Identifier, OpenVocabulary, StixObjectType } from "./types";
+import { Identifier, OpenVocabulary, StixObjectType } from "./types.js";
 
 export const OASIS_NAMESPACE = "00abedb4-aa42-466c-9c01-fed23315a9b7";
 
@@ -22,20 +22,31 @@ export const generateDeterministicId = <T extends OpenVocabulary<StixObjectType>
     return `${type}--${v5(canonicalize(props), namespace)}`;
 };
 
-export const generateDomainObservableId = (props: Any<{ value: string }>): Identifier<"domain-name"> => {
-    return generateDeterministicId("domain-name", { value: props.value });
+export const toValueObject = (valueOrProps: string | Any<{ value: string }>): object => {
+    return toSinglePropertyObject("value", valueOrProps);
 };
 
-export const generateUrlObservableId = (props: Any<{ value: string }>): Identifier<"url"> => {
-    return generateDeterministicId("url", { value: props.value });
+export const toSinglePropertyObject = <T extends string>(
+    key: T,
+    valueOrProps: string | Any<{ [T: string]: string }>,
+): object => {
+    return { [key]: typeof valueOrProps === "object" ? valueOrProps.value : valueOrProps };
 };
 
-export const generateIPv4ObservableId = (props: Any<{ value: string }>): Identifier<"ipv4-addr"> => {
-    return generateDeterministicId("ipv4-addr", { value: props.value });
+export const generateDomainNameId = (valueOrProps: string | Any<{ value: string }>): Identifier<"domain-name"> => {
+    return generateDeterministicId("domain-name", toValueObject(valueOrProps));
 };
 
-export const generateIPv6ObservableId = (props: Any<{ value: string }>): Identifier<"ipv6-addr"> => {
-    return generateDeterministicId("ipv6-addr", { value: props.value });
+export const generateUrlId = (valueOrProps: string | Any<{ value: string }>): Identifier<"url"> => {
+    return generateDeterministicId("url", toValueObject(valueOrProps));
+};
+
+export const generateIPv4AddrId = (valueOrProps: string | Any<{ value: string }>): Identifier<"ipv4-addr"> => {
+    return generateDeterministicId("ipv4-addr", toValueObject(valueOrProps));
+};
+
+export const generateIPv6AddrId = (valueOrProps: string | Any<{ value: string }>): Identifier<"ipv6-addr"> => {
+    return generateDeterministicId("ipv6-addr", toValueObject(valueOrProps));
 };
 
 export const generateBundleId = (): Identifier<"bundle"> => {
