@@ -199,7 +199,7 @@ export type Indicator = BaseStixDomainObject<"indicator"> & {
     description?: string;
     indicator_types?: IndicatorTypeOv[];
     pattern: string;
-    pattern_type: PatternTypeOv[];
+    pattern_type: PatternTypeOv;
     pattern_version?: string;
     valid_from: Timestamp;
     valid_until?: Timestamp;
@@ -298,8 +298,12 @@ export type DomainName = BaseStixCyberObservableObject<"domain-name"> & {
 export type EmailAddress = BaseStixCyberObservableObject<"email-address">;
 export type EmailMessage = BaseStixCyberObservableObject<"email-message">;
 export type File = BaseStixCyberObservableObject<"file">;
-export type IPv4Addr = BaseStixCyberObservableObject<"ipv4-addr">;
-export type IPv6Addr = BaseStixCyberObservableObject<"ipv6-addr">;
+export type IPv4Addr = BaseStixCyberObservableObject<"ipv4-addr"> & {
+    value: string;
+};
+export type IPv6Addr = BaseStixCyberObservableObject<"ipv6-addr"> & {
+    value: string;
+};
 export type MACAddr = BaseStixCyberObservableObject<"mac-addr">;
 export type Mutex = BaseStixCyberObservableObject<"mutex">;
 export type NetworkTraffic = BaseStixCyberObservableObject<"network-traffic">;
